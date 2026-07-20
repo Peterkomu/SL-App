@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dagstaat — Simon Loos</title>
+  <!-- jsPDF: generates the PDF in the browser, no server needed -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; background: #f2f4f7; color: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 16px;
+    }
+    .page { max-width: 640px; margin: 0 auto; padding: 16px 16px 96px; }
+    .brand { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+    .brand h1 { font-size: 20px; margin: 0; }
+    .brand span { font-size: 13px; color: #666; }
+    .card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 16px; margin: 0 0 12px; color: #333; text-transform: uppercase; letter-spacing: 0.03em; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 4px; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc;
+      border-radius: 8px; background: #fff;
+    }
+    .field textarea { resize: vertical; min-height: 70px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .computed { background: #eef7ee; border: 1px solid #cfe8cf; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #2a6b2a; margin-top: 4px; }
+    .radio-group { display: flex; gap: 16px; margin-top: 12px; }
+    .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: normal; font-size: 15px; }
+    .stop-card { border: 1px solid #e2e2e2; border-radius: 10px; padding: 12px; margin-bottom: 12px; background: #fafafa; }
+    .stop-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .stop-card-header strong { font-size: 14px; color: #555; }
+    .btn-remove { background: none; border: none; color: #c0392b; font-size: 14px; font-weight: 600; cursor: pointer; padding: 4px 8px; }
+    .btn-add { width: 100%; padding: 12px; border-radius: 8px; border: 2px dashed #999; background: #fff; color: #333; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-submit { width: 100%; padding: 16px; border-radius: 10px; border: none; background: #1a7f37; color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; }
+    .btn-submit:disabled { background: #9bbf9b; cursor: not-allowed; }
+    .btn-secondary { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ccc; background: #fff; color: #333; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+    .error-banner { background: #fdecea; border: 1px solid #f5c2c0; color: #a12622; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .success-screen { text-align: center; padding: 48px 16px; }
+    .success-screen .checkmark { font-size: 48px; color: #1a7f37; margin-bottom: 12px; }
+    .success-screen h2 { margin: 0 0 8px; }
+    .success-screen p { color: #555; margin: 0 0 24px; }
+    @media (max-width: 420px) { .row3 { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="page" id="app"></div>
+
+  <script>
+    // =====================================================================
+    // CONFIG — paste your Google Apps Script Web App URL between the quotes:
+    var SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+    // Driver names shown in the dropdown. Edit this list any time.
+    var DRIVERS = ["Ionut", "Erik van der Wal", "Kay Fonteijn"];
+    // =====================================================================
+
+    function todayISO() {
+      var d = new Date();
+      var mm = String(d.getMonth() + 1).padStart(2, "0");
+      var dd = String(d.getDate()).padStart(2, "0");
+      return d.getFullYear() + "-" + mm + "-" + dd;
+    }
+
+    function toMinutes(t) {
+      if (!t || t.indexOf(":") === -1) return null;
+      var p = t.split(":");
+      var h = parseInt(p[0], 10), m = parseInt(p[1], 10);
+      if (isNaN(h) || isNaN(m)) return null;
+      return h * 60 + m;
+    }
+    function computeUren(begin, eind, pauze) {
+      var s = toMinutes(begin), e = toMinutes(eind), pz = toMinutes(pauze) || 0;
+      if (s === null || e === null) return { bruto: "", netto: "" };
+      var diff = e - s; if (diff < 0) diff += 1440;
+      return {
+        bruto: Math.round((diff / 60) * 100) / 100,
+        netto: Math.round((Math.max(0, diff - pz) / 60) * 100) / 100
+      };
+    }
+    function computeKm(b, e) {
+      var bn = Number(b), en = Number(e);
+      if (!isFinite(bn) || !isFinite(en) || b === "" || e === "") return "";
+      return en - bn;
+    }
+
+    // ---- App state ----
+    var state = {
+      header: {
+        charterSubco: "", datum: todayISO(), chauffeur: "", personeelsnummer: "",
+        kenteken: "", trailernr: "", simonLoosTrailerNr: "", tabletBoco: "",
+        begintijd: "", eindtijd: "", pauze: "", kmBegin: "", kmEind: "",
+        tolkosten: "", kostenOverig: "", bijzonderheden: ""
+      },
+      stops: [emptyStop()],
+      customDriver: false,
+      submitting: false,
+      error: "",
+      success: false
+    };
+
+    function emptyStop() {
+      return { twNr: "", laadLosLocatie: "", aankomst: "", startLadenLossen: "",
+               vertrek: "", pauze: "", kmStand: "", opmerkingen: "" };
+    }
+
+    function h(key, val) { state.header[key] = val; render(); }
+    function sVal(i, key, val) { state.stops[i][key] = val; render(); }
+    function addStop() { state.stops.push(emptyStop()); render(); }
+    function removeStop(i) { state.stops.splice(i, 1); render(); }
+
+    function resetForm() {
+      state.header = {
+        charterSubco: "", datum: todayISO(), chauffeur: "", personeelsnummer: "",
+        kenteken: "", trailernr: "", simonLoosTrailerNr: "", tabletBoco: "",
+        begintijd: "", eindtijd: "", pauze: "", kmBegin: "", kmEind: "",
+        tolkosten: "", kostenOverig: "", bijzonderheden: ""
+      };
+      state.stops = [emptyStop()];
+      state.customDriver = false;
+      state.success = false;
+      state.error = "";
+      render();
+    }
+
+    function submit() {
+      state.error = "";
+      if (!state.header.chauffeur) { state.error = "Vul de naam van de chauffeur in."; render(); return; }
+      if (!state.header.datum) { state.error = "Vul de datum in."; render(); return; }
+      if (SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
+        state.error = "De app is nog niet gekoppeld (SCRIPT_URL ontbreekt).";
+        render(); return;
+      }
+
+      state.submitting = true; render();
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        // Apps Script web apps accept simple requests; text/plain avoids a CORS preflight.
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ header: state.header, stops: state.stops })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        state.submitting = false;
+        if (data && data.ok) {
+          // Snapshot exactly what was submitted, so the PDF matches
+          // even after the form is reset.
+          state.lastSubmitted = {
+            header: JSON.parse(JSON.stringify(state.header)),
+            stops: JSON.parse(JSON.stringify(state.stops))
+          };
+          state.success = true;
+        } else {
+          state.error = (data && data.error) || "Er ging iets mis.";
+        }
+        render();
+      })
+      .catch(function (err) {
+        state.submitting = false;
+        state.error = "Verzenden mislukt. Controleer je internet en probeer opnieuw.";
+        render();
+      });
+    }
+
+    // ---- Rendering (plain DOM, no framework) ----
+    function el(tag, attrs, children) {
+      var node = document.createElement(tag);
+      if (attrs) {
+        Object.keys(attrs).forEach(function (k) {
+          if (k === "class") node.className = attrs[k];
+          else if (k === "value") node.value = attrs[k];
+          else if (k === "checked") node.checked = attrs[k];
+          else if (k.slice(0, 2) === "on") node.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+          else node.setAttribute(k, attrs[k]);
+        });
+      }
+      (children || []).forEach(function (c) {
+        if (c == null) return;
+        node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+      });
+      return node;
+    }
+
+    function inputField(label, key, type) {
+      return el("div", { class: "field" }, [
+        el("label", null, [label]),
+        el("input", {
+          type: type || "text",
+          value: state.header[key] || "",
+          oninput: function (e) { state.header[key] = e.target.value; updateComputed(); }
+        })
+      ]);
+    }
+
+    function render() {
+      var app = document.getElementById("app");
+      app.innerHTML = "";
+
+      if (state.success) {
+        app.appendChild(el("div", { class: "success-screen" }, [
+          el("div", { class: "checkmark" }, ["\u2713"]),
+          el("h2", null, ["Dagstaat verzonden"]),
+          el("p", null, ["Je gegevens zijn opgeslagen."]),
+          el("button", { class: "btn-submit", onclick: function () { downloadPdf(state.lastSubmitted); } }, ["\uD83D\uDCC4 Download PDF"]),
+          el("button", { class: "btn-secondary", onclick: resetForm }, ["Nieuwe dagstaat invullen"])
+        ]));
+        return;
+      }
+
+      app.appendChild(el("div", { class: "brand" }, [
+        el("h1", null, ["Dagstaat"]),
+        el("span", null, ["Simon Loos"])
+      ]));
+
+      if (state.error) {
+        app.appendChild(el("div", { class: "error-banner" }, [state.error]));
+      }
+
+      // --- Gegevens card ---
+      var driverField;
+      if (!state.customDriver) {
+        var sel = el("select", {
+          value: state.header.chauffeur,
+          onchange: function (e) {
+            if (e.target.value === "__other__") { state.customDriver = true; state.header.chauffeur = ""; render(); }
+            else { state.header.chauffeur = e.target.value; }
+          }
+        }, [ el("option", { value: "" }, ["-- Kies je naam --"]) ]
+           .concat(DRIVERS.map(function (n) {
+             var o = el("option", { value: n }, [n]);
+             if (state.header.chauffeur === n) o.selected = true;
+             return o;
+           }))
+           .concat([ el("option", { value: "__other__" }, ["Anders / niet in lijst..."]) ]));
+        driverField = el("div", { class: "field" }, [ el("label", null, ["Naam chauffeur"]), sel ]);
+      } else {
+        driverField = el("div", { class: "field" }, [
+          el("label", null, ["Naam chauffeur"]),
+          el("input", { type: "text", value: state.header.chauffeur,
+            oninput: function (e) { state.header.chauffeur = e.target.value; } })
+        ]);
+      }
+
+      app.appendChild(el("div", { class: "card" }, [
+        el("h2", null, ["Gegevens"]),
+        inputField("Charter / subco", "charterSubco"),
+        el("div", { class: "row2" }, [ inputField("Datum", "datum", "date"), inputField("Kenteken", "kenteken") ]),
+        driverField,
+        el("div", { class: "row2" }, [
+          inputField("Personeelsnummer", "personeelsnummer"),
+          el("div", { class: "field" }, [
+            el("label", null, ["Tablet / boco"]),
+            el("div", { class: "radio-group" }, [
+              radio("tabletBoco", "Ja"), radio("tabletBoco", "Nee")
+            ])
+          ])
+        ]),
+        el("div", { class: "row2" }, [
+          inputField("Trailernr", "trailernr"),
+          inputField("Simon Loos trailer nr", "simonLoosTrailerNr")
+        ])
+      ]));
+
+      // --- Diensttijd card ---
+      var uren = computeUren(state.header.begintijd, state.header.eindtijd, state.header.pauze);
+      var diensttijdChildren = [
+        el("h2", null, ["Diensttijd"]),
+        el("div", { class: "row3" }, [
+          inputField("Begintijd", "begintijd", "time"),
+          inputField("Eindtijd", "eindtijd", "time"),
+          inputField("Pauze", "pauze", "time")
+        ])
+      ];
+      if (uren.bruto !== "" || uren.netto !== "") {
+        diensttijdChildren.push(el("div", { class: "computed", id: "urenBox" }, [
+          "Bruto uren: " + (uren.bruto || "-") + "  |  Netto uren: " + (uren.netto || "-")
+        ]));
+      }
+      app.appendChild(el("div", { class: "card" }, diensttijdChildren));
+
+      // --- Kilometers card ---
+      var kmTot = computeKm(state.header.kmBegin, state.header.kmEind);
+      var kmChildren = [
+        el("h2", null, ["Kilometers"]),
+        el("div", { class: "row2" }, [
+          inputField("KM begin", "kmBegin", "number"),
+          inputField("KM eind", "kmEind", "number")
+        ])
+      ];
+      if (kmTot !== "") {
+        kmChildren.push(el("div", { class: "computed", id: "kmBox" }, ["KM totaal: " + kmTot]));
+      }
+      kmChildren.push(el("div", { class: "row2" }, [
+        inputField("Tolkosten (\u20ac)", "tolkosten", "number"),
+        inputField("Kosten overig (\u20ac)", "kostenOverig", "number")
+      ]));
+      app.appendChild(el("div", { class: "card" }, kmChildren));
+
+      // --- Stops card ---
+      var stopCards = [ el("h2", null, ["Laad- / losstops"]) ];
+      state.stops.forEach(function (stop, i) {
+        var headerRow = el("div", { class: "stop-card-header" }, [
+          el("strong", null, ["Stop " + (i + 1)]),
+          state.stops.length > 1
+            ? el("button", { type: "button", class: "btn-remove", onclick: function () { removeStop(i); } }, ["Verwijderen"])
+            : null
+        ]);
+        stopCards.push(el("div", { class: "stop-card" }, [
+          headerRow,
+          stopField(i, "TW. nr", "twNr"),
+          stopField(i, "Laad-/loslocatie", "laadLosLocatie"),
+          el("div", { class: "row3" }, [
+            stopField(i, "Aankomst", "aankomst", "time"),
+            stopField(i, "Start laden/lossen", "startLadenLossen", "time"),
+            stopField(i, "Vertrek", "vertrek", "time")
+          ]),
+          el("div", { class: "row2" }, [
+            stopField(i, "Pauze", "pauze", "time"),
+            stopField(i, "KMstand", "kmStand", "number")
+          ]),
+          stopField(i, "Opmerkingen", "opmerkingen")
+        ]));
+      });
+      stopCards.push(el("button", { type: "button", class: "btn-add", onclick: addStop }, ["+ Stop toevoegen"]));
+      app.appendChild(el("div", { class: "card" }, stopCards));
+
+      // --- Bijzonderheden card ---
+      app.appendChild(el("div", { class: "card" }, [
+        el("h2", null, ["Bijzonderheden"]),
+        el("div", { class: "field" }, [
+          el("textarea", {
+            value: state.header.bijzonderheden,
+            placeholder: "Eventuele opmerkingen...",
+            oninput: function (e) { state.header.bijzonderheden = e.target.value; }
+          })
+        ])
+      ]));
+
+      // --- Submit + download ---
+      app.appendChild(el("button", {
+        class: "btn-submit",
+        disabled: state.submitting ? "disabled" : null,
+        onclick: submit
+      }, [ state.submitting ? "Bezig met verzenden..." : "Dagstaat verzenden" ]));
+
+      app.appendChild(el("button", {
+        class: "btn-secondary",
+        onclick: function () { downloadPdf(null); }
+      }, [ "\uD83D\uDCC4 Download PDF" ]));
+    }
+
+    function radio(key, val) {
+      return el("label", null, [
+        el("input", {
+          type: "radio", name: key,
+          checked: state.header[key] === val,
+          onchange: function () { state.header[key] = val; }
+        }),
+        val
+      ]);
+    }
+
+    function stopField(i, label, key, type) {
+      return el("div", { class: "field" }, [
+        el("label", null, [label]),
+        el("input", {
+          type: type || "text",
+          value: state.stops[i][key] || "",
+          oninput: function (e) { state.stops[i][key] = e.target.value; }
+        })
+      ]);
+    }
+
+    // =====================================================================
+    // PDF generation — recreates the paper "dagstaat charters" layout.
+    // Runs entirely in the browser via jsPDF (loaded from the CDN above).
+    // =====================================================================
+    function downloadPdf(snapshot) {
+      if (!snapshot) { snapshot = { header: state.header, stops: state.stops }; }
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("PDF-bibliotheek nog niet geladen. Controleer je internet en probeer opnieuw.");
+        return;
+      }
+      var jsPDF = window.jspdf.jsPDF;
+      var hdr = snapshot.header;
+      var stops = snapshot.stops || [];
+
+      // Landscape A4 in millimetres, matching the paper form's orientation.
+      var doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      var pageW = doc.internal.pageSize.getWidth();   // ~297
+      var margin = 8;
+      var x = margin;
+      var y = margin;
+      var right = pageW - margin;
+
+      var uren = computeUren(hdr.begintijd, hdr.eindtijd, hdr.pauze);
+      var kmTot = computeKm(hdr.kmBegin, hdr.kmEind);
+
+      // ---- Title ----
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.text("svp compleet in te vullen door chauffeur", pageW / 2, y + 3, { align: "center" });
+      doc.setFontSize(7);
+      doc.text("svp palletbon niet vergeten", pageW / 2, y + 7, { align: "center" });
+      // Simon Loos wordmark (text stand-in for the logo)
+      doc.setFont("helvetica", "bolditalic");
+      doc.setFontSize(16);
+      doc.text("Simon Loos", right, y + 6, { align: "right" });
+      y += 11;
+
+      // ---- Top info block: left labels + Diensttijd + Kilometers + admin ----
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+
+      var blockTop = y;
+      var leftW = 95;         // Charter/Datum/Chauffeur etc.
+      var colDienst = x + leftW + 2;
+      var dienstW = 55;
+      var colKm = colDienst + dienstW + 2;
+      var kmW = 60;
+      var colAdmin = colKm + kmW + 2;
+      var rowH = 6;
+
+      // Left labelled fields
+      var leftRows = [
+        ["Charter / subco:", hdr.charterSubco],
+        ["Datum:", hdr.datum],
+        ["Naam chauffeur:", hdr.chauffeur],
+        ["Personeelsnummer:", hdr.personeelsnummer],
+        ["Kenteken:", hdr.kenteken],
+        ["Trailernr:", hdr.trailernr],
+        ["Simon Loos Trailer nr:", hdr.simonLoosTrailerNr],
+        ["Tablet/boco:", hdr.tabletBoco]
+      ];
+      for (var i = 0; i < leftRows.length; i++) {
+        var ry = blockTop + i * rowH;
+        doc.rect(x, ry, leftW, rowH);
+        doc.setFont("helvetica", "bold");
+        doc.text(String(leftRows[i][0]), x + 1.5, ry + 4);
+        doc.setFont("helvetica", "normal");
+        doc.text(String(leftRows[i][1] || ""), x + 42, ry + 4);
+      }
+
+      // Diensttijd column
+      function labelledBox(cx, cw, title, rows) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(title, cx + cw / 2, blockTop - 1, { align: "center" });
+        doc.setFontSize(8);
+        for (var j = 0; j < rows.length; j++) {
+          var by = blockTop + j * rowH;
+          doc.rect(cx, by, cw, rowH);
+          doc.setFont("helvetica", "normal");
+          doc.text(String(rows[j][0]), cx + 1.5, by + 4);
+          doc.setFont("helvetica", "bold");
+          doc.text(String(rows[j][1] || ""), cx + cw - 1.5, by + 4, { align: "right" });
+        }
+      }
+
+      labelledBox(colDienst, dienstW, "Diensttijd", [
+        ["Begintijd", hdr.begintijd],
+        ["Eindtijd", hdr.eindtijd],
+        ["bruto uren", uren.bruto],
+        ["pauze", hdr.pauze],
+        ["netto uren", uren.netto]
+      ]);
+
+      labelledBox(colKm, kmW, "Kilometers", [
+        ["KM eind", hdr.kmEind],
+        ["KM begin", hdr.kmBegin],
+        ["KM totaal", kmTot],
+        ["Tolkosten", hdr.tolkosten],
+        ["kosten overig", hdr.kostenOverig]
+      ]);
+
+      // Admin column (blank for S.Loos admin, as on paper)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text("In te vullen door S.Loos admin", colAdmin, blockTop - 1);
+      doc.setFontSize(8);
+      var adminRows = ["Begintijd", "Eindtijd", "bruto uren", "pauze", "netto uren"];
+      var adminW = right - colAdmin;
+      for (var a = 0; a < adminRows.length; a++) {
+        var ay = blockTop + a * rowH;
+        doc.rect(colAdmin, ay, adminW, rowH);
+        doc.setFont("helvetica", "normal");
+        doc.text(adminRows[a], colAdmin + 1.5, ay + 4);
+      }
+
+      y = blockTop + leftRows.length * rowH + 4;
+
+      // ---- Stops table ----
+      var cols = [
+        { key: "twNr",            title: "TW. nr",           w: 22 },
+        { key: "laadLosLocatie",  title: "Laad-/loslocatie", w: 78 },
+        { key: "aankomst",        title: "Aankomst",         w: 22 },
+        { key: "startLadenLossen",title: "Start Laden/Lossen",w: 26 },
+        { key: "vertrek",         title: "Vertrek",          w: 22 },
+        { key: "pauze",           title: "Pauze",            w: 20 },
+        { key: "kmStand",         title: "KMstand",          w: 24 },
+        { key: "opmerkingen",     title: "opmerkingen",      w: 45 }
+      ];
+      // Header row
+      var headerH = 6;
+      var cx = x;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      for (var c = 0; c < cols.length; c++) {
+        doc.rect(cx, y, cols[c].w, headerH);
+        doc.text(cols[c].title, cx + cols[c].w / 2, y + 4, { align: "center" });
+        cx += cols[c].w;
+      }
+      y += headerH;
+
+      // Data rows — always draw at least 15 rows like the paper form.
+      var minRows = 15;
+      var totalRows = Math.max(minRows, stops.length);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      var dataH = 6;
+      for (var r = 0; r < totalRows; r++) {
+        cx = x;
+        var stop = stops[r] || {};
+        for (var cc = 0; cc < cols.length; cc++) {
+          doc.rect(cx, y, cols[cc].w, dataH);
+          var val = stop[cols[cc].key];
+          if (val) {
+            var txt = String(val);
+            // clip long text to the cell width
+            var maxChars = Math.floor(cols[cc].w / 1.6);
+            if (txt.length > maxChars) txt = txt.slice(0, maxChars - 1) + "\u2026";
+            doc.text(txt, cx + 1.5, y + 4);
+          }
+          cx += cols[cc].w;
+        }
+        y += dataH;
+        if (y > doc.internal.pageSize.getHeight() - 25) break; // safety
+      }
+
+      // ---- Bijzonderheden ----
+      y += 3;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("Bijzonderheden:", x, y + 3);
+      doc.setFont("helvetica", "normal");
+      var bijz = hdr.bijzonderheden || "";
+      var wrapped = doc.splitTextToSize(bijz, right - x - 30);
+      doc.text(wrapped, x + 28, y + 3);
+
+      // ---- Filename ----
+      var safeName = (hdr.chauffeur || "chauffeur").replace(/[^a-z0-9]+/gi, "_");
+      var fname = "Dagstaat_" + safeName + "_" + (hdr.datum || "") + ".pdf";
+      doc.save(fname);
+    }
+
+    // Recalculate the green computed boxes without a full re-render
+    // (keeps focus in the field the driver is typing in).
+    function updateComputed() {
+      var uren = computeUren(state.header.begintijd, state.header.eindtijd, state.header.pauze);
+      var urenBox = document.getElementById("urenBox");
+      if (urenBox) urenBox.textContent = "Bruto uren: " + (uren.bruto || "-") + "  |  Netto uren: " + (uren.netto || "-");
+      var kmTot = computeKm(state.header.kmBegin, state.header.kmEind);
+      var kmBox = document.getElementById("kmBox");
+      if (kmBox) kmBox.textContent = "KM totaal: " + kmTot;
+    }
+
+    render();
+  </script>
+</body>
+</html>
