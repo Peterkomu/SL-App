@@ -315,12 +315,12 @@
           stopField(i, "TW. nr", "twNr"),
           stopField(i, "Laad-/loslocatie", "laadLosLocatie"),
           el("div", { class: "row3" }, [
-            stopField(i, "Aankomst", "aankomst", "time"),
-            stopField(i, "Start laden/lossen", "startLadenLossen", "time"),
-            stopField(i, "Vertrek", "vertrek", "time")
+            stopField(i, "Aankomst", "aankomst", "datetime-local"),
+            stopField(i, "Start laden/lossen", "startLadenLossen", "datetime-local"),
+            stopField(i, "Vertrek", "vertrek", "datetime-local")
           ]),
           el("div", { class: "row2" }, [
-            stopField(i, "Pauze", "pauze", "time"),
+            stopPauzeField(i),
             stopField(i, "KMstand", "kmStand", "number")
           ]),
           stopField(i, "Opmerkingen", "opmerkingen")
@@ -411,8 +411,39 @@
       ]);
     }
 
-    // =====================================================================
-    // PDF generation — recreates the paper "dagstaat charters" layout.
+    // Stop Pauze as two number boxes (Uren / Minuten), stored back as "HH:MM".
+    function stopPauzeField(i) {
+      var parts = (state.stops[i].pauze || "").split(":");
+      var hrs = parts.length === 2 ? parts[0] : "";
+      var mins = parts.length === 2 ? parts[1] : "";
+
+      function commit(newHrs, newMins) {
+        var hNum = newHrs === "" ? 0 : parseInt(newHrs, 10) || 0;
+        var mNum = newMins === "" ? 0 : parseInt(newMins, 10) || 0;
+        if (newHrs === "" && newMins === "") { state.stops[i].pauze = ""; }
+        else { state.stops[i].pauze = String(hNum).padStart(2, "0") + ":" + String(mNum).padStart(2, "0"); }
+      }
+
+      var hourBox = el("div", null, [
+        el("input", {
+          type: "number", min: "0", max: "23", value: hrs, placeholder: "0",
+          oninput: function (e) { hrs = e.target.value; commit(hrs, mins); }
+        }),
+        el("span", { class: "sublabel" }, ["Uren"])
+      ]);
+      var minBox = el("div", null, [
+        el("input", {
+          type: "number", min: "0", max: "59", value: mins, placeholder: "0",
+          oninput: function (e) { mins = e.target.value; commit(hrs, mins); }
+        }),
+        el("span", { class: "sublabel" }, ["Minuten"])
+      ]);
+
+      return el("div", { class: "field" }, [
+        el("label", null, ["Pauze"]),
+        el("div", { class: "row2" }, [ hourBox, minBox ])
+      ]);
+    }
     // Runs entirely in the browser via jsPDF (loaded from the CDN above).
     // =====================================================================
     function downloadPdf(snapshot) {
@@ -565,6 +596,11 @@
           doc.rect(cx, y, cols[cc].w, dataH);
           var val = stop[cols[cc].key];
           if (val) {
+            var key = cols[cc].key;
+            // Show only the time part for datetime columns.
+            if (key === "aankomst" || key === "startLadenLossen" || key === "vertrek") {
+              val = timePart(val);
+            }
             var txt = String(val);
             // clip long text to the cell width
             var maxChars = Math.floor(cols[cc].w / 1.6);
