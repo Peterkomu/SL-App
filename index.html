@@ -31,6 +31,7 @@
     .computed { background: #eef7ee; border: 1px solid #cfe8cf; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #2a6b2a; margin-top: 4px; }
     .radio-group { display: flex; gap: 16px; margin-top: 12px; }
     .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: normal; font-size: 15px; }
+    .sublabel { display: block; text-align: center; font-size: 13px; color: #666; margin-top: 4px; font-weight: normal; }
     .stop-card { border: 1px solid #e2e2e2; border-radius: 10px; padding: 12px; margin-bottom: 12px; background: #fafafa; }
     .stop-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .stop-card-header strong { font-size: 14px; color: #555; }
@@ -251,11 +252,11 @@
       var uren = computeUren(state.header.begintijd, state.header.eindtijd, state.header.pauze);
       var diensttijdChildren = [
         el("h2", null, ["Diensttijd"]),
-        el("div", { class: "row3" }, [
-          inputField("Begintijd", "begintijd", "time"),
-          inputField("Eindtijd", "eindtijd", "time"),
-          inputField("Pauze", "pauze", "time")
-        ])
+        el("div", { class: "row2" }, [
+          timeDropdownField("Begintijd", "begintijd"),
+          timeDropdownField("Eindtijd", "eindtijd")
+        ]),
+        pauzeField()
       ];
       if (uren.bruto !== "" || uren.netto !== "") {
         diensttijdChildren.push(el("div", { class: "computed", id: "urenBox" }, [
@@ -354,6 +355,59 @@
           value: state.stops[i][key] || "",
           oninput: function (e) { state.stops[i][key] = e.target.value; }
         })
+      ]);
+    }
+
+    // Single time dropdown (00:00 -> 23:55 in 5-minute steps), like the inspo.
+    function timeDropdownField(label, key) {
+      var current = state.header[key] || "";
+      var opts = [ el("option", { value: "" }, ["--:--"]) ];
+      for (var hh = 0; hh < 24; hh++) {
+        for (var mm = 0; mm < 60; mm += 5) {
+          var v = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
+          var o = el("option", { value: v }, [v]);
+          if (current === v) o.selected = true;
+          opts.push(o);
+        }
+      }
+      var sel = el("select", {
+        onchange: function (e) { state.header[key] = e.target.value; render(); }
+      }, opts);
+      return el("div", { class: "field" }, [ el("label", null, [label]), sel ]);
+    }
+
+    // Pauze as two number boxes (Uren / Minuten), stored back as "HH:MM".
+    function pauzeField() {
+      var parts = (state.header.pauze || "").split(":");
+      var hrs = parts.length === 2 ? parts[0] : "";
+      var mins = parts.length === 2 ? parts[1] : "";
+
+      function commit(newHrs, newMins) {
+        var hNum = newHrs === "" ? 0 : parseInt(newHrs, 10) || 0;
+        var mNum = newMins === "" ? 0 : parseInt(newMins, 10) || 0;
+        if (newHrs === "" && newMins === "") { state.header.pauze = ""; }
+        else { state.header.pauze = String(hNum).padStart(2, "0") + ":" + String(mNum).padStart(2, "0"); }
+        updateComputed();
+      }
+
+      var hourBox = el("div", null, [
+        el("input", {
+          type: "number", min: "0", max: "23", value: hrs, placeholder: "0",
+          oninput: function (e) { hrs = e.target.value; commit(hrs, mins); }
+        }),
+        el("span", { class: "sublabel" }, ["Uren"])
+      ]);
+      var minBox = el("div", null, [
+        el("input", {
+          type: "number", min: "0", max: "59", value: mins, placeholder: "0",
+          oninput: function (e) { mins = e.target.value; commit(hrs, mins); }
+        }),
+        el("span", { class: "sublabel" }, ["Minuten"])
+      ]);
+
+      return el("div", { class: "field" }, [
+        el("label", null, ["Pauze"]),
+        el("div", { class: "row2" }, [ hourBox, minBox ])
       ]);
     }
 
