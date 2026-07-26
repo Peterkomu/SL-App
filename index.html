@@ -22,9 +22,15 @@
     .field { margin-bottom: 12px; }
     .field label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 4px; }
     .field input, .field select, .field textarea {
-      width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc;
-      border-radius: 8px; background: #fff;
+      width: 100%; max-width: 100%; min-width: 0; padding: 12px; font-size: 16px; border: 1px solid #ccc;
+      border-radius: 8px; background: #fff; -webkit-appearance: none; appearance: none;
     }
+    /* Date/time inputs have a fixed intrinsic width on mobile; force them to fit their box. */
+    .field input[type="datetime-local"], .field input[type="time"], .field input[type="date"] {
+      -webkit-appearance: none; appearance: none; min-width: 0; width: 100%;
+    }
+    /* Grid cells must be allowed to shrink below their content's intrinsic width. */
+    .row2 > *, .row3 > * { min-width: 0; }
     .field textarea { resize: vertical; min-height: 70px; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
@@ -45,7 +51,11 @@
     .success-screen .checkmark { font-size: 48px; color: #1a7f37; margin-bottom: 12px; }
     .success-screen h2 { margin: 0 0 8px; }
     .success-screen p { color: #555; margin: 0 0 24px; }
-    @media (max-width: 420px) { .row3 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) {
+      .row3 { grid-template-columns: 1fr 1fr; }
+      /* Give date/time pickers a full-width row each on small phones. */
+      .row-datetime { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -270,7 +280,7 @@
       var uren = computeUren(state.header.begintijd, state.header.eindtijd, state.header.pauze);
       var diensttijdChildren = [
         el("h2", null, ["Diensttijd"]),
-        el("div", { class: "row2" }, [
+        el("div", { class: "row2 row-datetime" }, [
           inputField("Begintijd", "begintijd", "datetime-local"),
           inputField("Eindtijd", "eindtijd", "datetime-local")
         ]),
@@ -314,7 +324,7 @@
           headerRow,
           stopField(i, "TW. nr", "twNr"),
           stopField(i, "Laad-/loslocatie", "laadLosLocatie"),
-          el("div", { class: "row3" }, [
+          el("div", { class: "row3 row-datetime" }, [
             stopField(i, "Aankomst", "aankomst", "datetime-local"),
             stopField(i, "Start laden/lossen", "startLadenLossen", "datetime-local"),
             stopField(i, "Vertrek", "vertrek", "datetime-local")
