@@ -54,9 +54,6 @@
     // =====================================================================
     // CONFIG — paste your Google Apps Script Web App URL between the quotes:
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuDh46dvcVylru0o9_cPNypl1ci6ei9wrp5I_FbPp6Qd21Bzaz254gZ-79zgPz1RWv/exec";
-
-    // Driver names shown in the dropdown. Edit this list any time.
-    var DRIVERS = ["Ionut", "Erik van der Wal", "Kay Fonteijn"];
     // =====================================================================
 
     function todayISO() {
@@ -97,7 +94,6 @@
         tolkosten: "", kostenOverig: "", bijzonderheden: ""
       },
       stops: [emptyStop()],
-      customDriver: false,
       submitting: false,
       error: "",
       success: false
@@ -121,7 +117,6 @@
         tolkosten: "", kostenOverig: "", bijzonderheden: ""
       };
       state.stops = [emptyStop()];
-      state.customDriver = false;
       state.success = false;
       state.error = "";
       render();
@@ -222,29 +217,15 @@
       }
 
       // --- Gegevens card ---
-      var driverField;
-      if (!state.customDriver) {
-        var sel = el("select", {
+      var driverField = el("div", { class: "field" }, [
+        el("label", null, ["Naam chauffeur"]),
+        el("input", {
+          type: "text",
           value: state.header.chauffeur,
-          onchange: function (e) {
-            if (e.target.value === "__other__") { state.customDriver = true; state.header.chauffeur = ""; render(); }
-            else { state.header.chauffeur = e.target.value; }
-          }
-        }, [ el("option", { value: "" }, ["-- Kies je naam --"]) ]
-           .concat(DRIVERS.map(function (n) {
-             var o = el("option", { value: n }, [n]);
-             if (state.header.chauffeur === n) o.selected = true;
-             return o;
-           }))
-           .concat([ el("option", { value: "__other__" }, ["Anders / niet in lijst..."]) ]));
-        driverField = el("div", { class: "field" }, [ el("label", null, ["Naam chauffeur"]), sel ]);
-      } else {
-        driverField = el("div", { class: "field" }, [
-          el("label", null, ["Naam chauffeur"]),
-          el("input", { type: "text", value: state.header.chauffeur,
-            oninput: function (e) { state.header.chauffeur = e.target.value; } })
-        ]);
-      }
+          placeholder: "Vul je naam in",
+          oninput: function (e) { state.header.chauffeur = e.target.value; }
+        })
+      ]);
 
       app.appendChild(el("div", { class: "card" }, [
         el("h2", null, ["Gegevens"]),
