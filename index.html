@@ -484,18 +484,18 @@
       var uren = computeUren(hdr.begintijd, hdr.eindtijd, hdr.pauze);
       var kmTot = computeKm(hdr.kmBegin, hdr.kmEind);
 
-      // ---------- Title (centered over the left half) ----------
-      var titleCenter = x + 118;
+      // ---------- Title (centered over the left block only) ----------
+      var titleCenter = x + 90;
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text("svp compleet in te vullen door chauffeur", titleCenter, margin + 4, { align: "center" });
+      doc.text("svp compleet in te vullen door chauffeur", titleCenter, margin + 3, { align: "center" });
       doc.setFontSize(7);
-      doc.text("svp palletbon niet vergeten", titleCenter, margin + 8, { align: "center" });
+      doc.text("svp palletbon niet vergeten", titleCenter, margin + 6.5, { align: "center" });
 
       // ---------- Top block geometry ----------
       // Left side: 6 labelled rows. Right side: 3 columns (Diensttijd / Kilometers /
       // admin), each with its own group header and 5 value rows.
-      var blockTop = margin + 12;
+      var blockTop = margin + 14;
       var rowH = 6.6;
       var nLeftRows = 6;
       var nRightRows = 5;
@@ -703,11 +703,31 @@
       doc.rect(x, bijzTop, bijzBoxW, bijzH);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      doc.text("Bijzonderheden", x + 2, bijzTop + 6);
+      doc.text("Bijzonderheden", x + 2, bijzTop + bijzH / 2 + 1);
+
+      // Three writing lines (like the real sheet), starting to the right of the label.
+      var linesX = x + 34;
+      var linesRight = x + bijzBoxW - 4;
+      var nLines = 3;
+      var lineGap = bijzH / (nLines + 1);
+      doc.setLineWidth(0.15);
+      var lineYs = [];
+      for (var li = 1; li <= nLines; li++) {
+        var ly = bijzTop + lineGap * li;
+        doc.line(linesX, ly, linesRight, ly);
+        lineYs.push(ly);
+      }
+      doc.setLineWidth(0.2);
+
+      // Place the driver's text on the lines (wrapped, one segment per line).
       var bijz = hdr.bijzonderheden || "";
-      var wrapped = doc.splitTextToSize(bijz, bijzBoxW - 32);
-      doc.setFontSize(8);
-      doc.text(wrapped, x + 30, bijzTop + 6);
+      if (bijz) {
+        doc.setFontSize(8);
+        var wrapped = doc.splitTextToSize(bijz, linesRight - linesX);
+        for (var wl = 0; wl < wrapped.length && wl < nLines; wl++) {
+          doc.text(wrapped[wl], linesX, lineYs[wl] - 1.2);
+        }
+      }
 
       // Logo bottom-right
       try {
