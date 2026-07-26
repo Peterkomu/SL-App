@@ -71,10 +71,28 @@
       if (isNaN(h) || isNaN(m)) return null;
       return h * 60 + m;
     }
+    // Extract "HH:MM" from either a plain time ("HH:MM") or a
+    // datetime-local value ("YYYY-MM-DDTHH:MM").
+    function timePart(v) {
+      if (!v) return "";
+      var t = v.indexOf("T") !== -1 ? v.split("T")[1] : v;
+      return t || "";
+    }
     function computeUren(begin, eind, pauze) {
-      var s = toMinutes(begin), e = toMinutes(eind), pz = toMinutes(pauze) || 0;
-      if (s === null || e === null) return { bruto: "", netto: "" };
-      var diff = e - s; if (diff < 0) diff += 1440;
+      var sd = begin && begin.indexOf("T") !== -1 ? new Date(begin) : null;
+      var ed = eind && eind.indexOf("T") !== -1 ? new Date(eind) : null;
+      var diff;
+      if (sd && ed && !isNaN(sd) && !isNaN(ed)) {
+        // Both are full datetimes: use the real span (handles overnight/next-day).
+        diff = Math.round((ed - sd) / 60000);
+        if (diff < 0) diff = 0;
+      } else {
+        // Fall back to clock-time diff (assumes same day, wraps past midnight).
+        var s = toMinutes(timePart(begin)), e = toMinutes(timePart(eind));
+        if (s === null || e === null) return { bruto: "", netto: "" };
+        diff = e - s; if (diff < 0) diff += 1440;
+      }
+      var pz = toMinutes(timePart(pauze)) || 0;
       return {
         bruto: Math.round((diff / 60) * 100) / 100,
         netto: Math.round((Math.max(0, diff - pz) / 60) * 100) / 100
@@ -253,8 +271,8 @@
       var diensttijdChildren = [
         el("h2", null, ["Diensttijd"]),
         el("div", { class: "row2" }, [
-          timeDropdownField("Begintijd", "begintijd"),
-          timeDropdownField("Eindtijd", "eindtijd")
+          inputField("Begintijd", "begintijd", "datetime-local"),
+          inputField("Eindtijd", "eindtijd", "datetime-local")
         ]),
         pauzeField()
       ];
@@ -356,24 +374,6 @@
           oninput: function (e) { state.stops[i][key] = e.target.value; }
         })
       ]);
-    }
-
-    // Single time dropdown (00:00 -> 23:55 in 5-minute steps), like the inspo.
-    function timeDropdownField(label, key) {
-      var current = state.header[key] || "";
-      var opts = [ el("option", { value: "" }, ["--:--"]) ];
-      for (var hh = 0; hh < 24; hh++) {
-        for (var mm = 0; mm < 60; mm += 5) {
-          var v = String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0");
-          var o = el("option", { value: v }, [v]);
-          if (current === v) o.selected = true;
-          opts.push(o);
-        }
-      }
-      var sel = el("select", {
-        onchange: function (e) { state.header[key] = e.target.value; render(); }
-      }, opts);
-      return el("div", { class: "field" }, [ el("label", null, [label]), sel ]);
     }
 
     // Pauze as two number boxes (Uren / Minuten), stored back as "HH:MM".
@@ -498,8 +498,8 @@
       }
 
       labelledBox(colDienst, dienstW, "Diensttijd", [
-        ["Begintijd", hdr.begintijd],
-        ["Eindtijd", hdr.eindtijd],
+        ["Begintijd", timePart(hdr.begintijd)],
+        ["Eindtijd", timePart(hdr.eindtijd)],
         ["bruto uren", uren.bruto],
         ["pauze", hdr.pauze],
         ["netto uren", uren.netto]
