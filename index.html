@@ -51,6 +51,18 @@
     .success-screen .checkmark { font-size: 48px; color: #1a7f37; margin-bottom: 12px; }
     .success-screen h2 { margin: 0 0 8px; }
     .success-screen p { color: #555; margin: 0 0 24px; }
+
+    /* --- Language selector pills --- */
+    .lang-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px; }
+    .lang-btn {
+      background: #eef1f5; border: 1px solid #e2e6ec; color: #47525f;
+      padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .lang-btn:hover { background: #e2e8f0; }
+    .lang-btn.active { background: #2f80d8; border-color: #2870bf; color: #fff; box-shadow: 0 2px 4px rgba(47,128,216,0.3); }
+    .pdf-note { font-size: 12px; color: #777; text-align: center; margin: -6px 0 16px; }
+
     @media (max-width: 480px) {
       .row3 { grid-template-columns: 1fr 1fr; }
       /* Give date/time pickers a full-width row each on small phones. */
@@ -67,8 +79,252 @@
     var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuDh46dvcVylru0o9_cPNypl1ci6ei9wrp5I_FbPp6Qd21Bzaz254gZ-79zgPz1RWv/exec";
 
     // Simon Loos logo (extracted from the official blank sheet), embedded for the PDF.
-    var SIMON_LOOS_LOGO = "data:image/png;base64,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";
+    var SIMON_LOOS_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAM8AAABHCAIAAAAvAIS9AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAQ9klEQVR4nO1cCVRUVR+fLHfTvkzNFHdFMk37cElN1NRcIHdJTT8PaWkuhZppYS4hinjMYyLhKSXJpfgUc9fCLVADPhAUUXAB2RRF0JFF4D2+n+/C9fbmMVxmhhkH3u/M8Yz33fV/f//t3jdoilSoMBc0lp6AiioElW0qzAeVbSrMB5VtKswHlW0qzAeVbSrMB5VtKswHlW0qzAeVbSrMB5VtKswHlW0qzAf/g8YRBRJo6IBRgAAAABJRU5ErkJggg==";
     // =====================================================================
+
+    // =====================================================================
+    // LANGUAGE PACKS — these translate the ON-SCREEN interface only.
+    // The PDF is ALWAYS generated in Dutch (see downloadPdf below), no matter
+    // which language the driver picks here.
+    // =====================================================================
+    var currentLang = "nl";
+    var LANG_ORDER = ["en", "nl", "pl", "pt", "ro", "ru", "bg", "fr", "de"];
+    var LANG_NAMES = {
+      en: "English", nl: "Dutch", pl: "Polish", pt: "Portuguese",
+      ro: "Romanian", ru: "Russian", bg: "Bulgarian", fr: "French", de: "German"
+    };
+
+    var I18N = {
+      nl: {
+        brand: "Dagstaat", gegevens: "Gegevens", charterSubco: "Charter / subco", datum: "Datum",
+        kenteken: "Kenteken", naamChauffeur: "Naam chauffeur", p_naam: "Vul je naam in",
+        personeelsnummer: "Personeelsnummer", tabletBoco: "Tablet / boco", ja: "Ja", nee: "Nee",
+        trailernr: "Trailernr", simonLoosTrailerNr: "Simon Loos trailer nr",
+        diensttijd: "Diensttijd", begintijd: "Begintijd", eindtijd: "Eindtijd", pauze: "Pauze",
+        uren: "Uren", minuten: "Minuten", brutoUren: "Bruto uren", nettoUren: "Netto uren",
+        kilometers: "Kilometers", kmBegin: "KM begin", kmEind: "KM eind", kmTotaal: "KM totaal",
+        tolkosten: "Tolkosten (\u20ac)", kostenOverig: "Kosten overig (\u20ac)",
+        laadLosstops: "Laad- / losstops", stop: "Stop", verwijderen: "Verwijderen",
+        twNr: "TW. nr", laadLosLocatie: "Laad-/loslocatie", aankomst: "Aankomst",
+        startLadenLossen: "Start laden/lossen", vertrek: "Vertrek", kmstand: "KMstand",
+        opmerkingen: "Opmerkingen", stopToevoegen: "+ Stop toevoegen",
+        bijzonderheden: "Bijzonderheden", p_bijzonderheden: "Eventuele opmerkingen...",
+        verzenden: "Dagstaat verzenden", bezigVerzenden: "Bezig met verzenden...",
+        downloadPdf: "\uD83D\uDCC4 Download PDF (NL)",
+        successTitle: "Dagstaat verzonden", successMsg: "Je gegevens zijn opgeslagen.",
+        nieuweDagstaat: "Nieuwe dagstaat invullen",
+        pdfNote: "De PDF wordt altijd in het Nederlands gedownload.",
+        err_chauffeur: "Vul de naam van de chauffeur in.", err_datum: "Vul de datum in.",
+        err_koppeling: "De app is nog niet gekoppeld (SCRIPT_URL ontbreekt).",
+        err_algemeen: "Er ging iets mis.",
+        err_verzenden: "Verzenden mislukt. Controleer je internet en probeer opnieuw."
+      },
+      en: {
+        brand: "Daily Sheet", gegevens: "Details", charterSubco: "Charter / subco", datum: "Date",
+        kenteken: "License plate", naamChauffeur: "Driver name", p_naam: "Enter your name",
+        personeelsnummer: "Employee number", tabletBoco: "Tablet / boco", ja: "Yes", nee: "No",
+        trailernr: "Trailer no.", simonLoosTrailerNr: "Simon Loos trailer no.",
+        diensttijd: "Working time", begintijd: "Start time", eindtijd: "End time", pauze: "Break",
+        uren: "Hours", minuten: "Minutes", brutoUren: "Gross hours", nettoUren: "Net hours",
+        kilometers: "Kilometers", kmBegin: "KM start", kmEind: "KM end", kmTotaal: "KM total",
+        tolkosten: "Toll costs (\u20ac)", kostenOverig: "Other costs (\u20ac)",
+        laadLosstops: "Loading / unloading stops", stop: "Stop", verwijderen: "Remove",
+        twNr: "TW no.", laadLosLocatie: "Loading/unloading location", aankomst: "Arrival",
+        startLadenLossen: "Start loading/unloading", vertrek: "Departure", kmstand: "Odometer",
+        opmerkingen: "Notes", stopToevoegen: "+ Add stop",
+        bijzonderheden: "Remarks", p_bijzonderheden: "Any remarks...",
+        verzenden: "Submit daily sheet", bezigVerzenden: "Submitting...",
+        downloadPdf: "\uD83D\uDCC4 Download PDF (NL)",
+        successTitle: "Daily sheet submitted", successMsg: "Your data has been saved.",
+        nieuweDagstaat: "Fill in a new daily sheet",
+        pdfNote: "The PDF is always downloaded in Dutch.",
+        err_chauffeur: "Please enter the driver's name.", err_datum: "Please enter the date.",
+        err_koppeling: "The app is not yet linked (SCRIPT_URL missing).",
+        err_algemeen: "Something went wrong.",
+        err_verzenden: "Submission failed. Check your internet and try again."
+      },
+      pl: {
+        brand: "Karta dzienna", gegevens: "Dane", charterSubco: "Charter / podwykonawca", datum: "Data",
+        kenteken: "Nr rejestracyjny", naamChauffeur: "Imi\u0119 i nazwisko kierowcy", p_naam: "Wpisz swoje imi\u0119",
+        personeelsnummer: "Numer pracownika", tabletBoco: "Tablet / boco", ja: "Tak", nee: "Nie",
+        trailernr: "Nr naczepy", simonLoosTrailerNr: "Nr naczepy Simon Loos",
+        diensttijd: "Czas pracy", begintijd: "Czas rozpocz\u0119cia", eindtijd: "Czas zako\u0144czenia", pauze: "Przerwa",
+        uren: "Godziny", minuten: "Minuty", brutoUren: "Godziny brutto", nettoUren: "Godziny netto",
+        kilometers: "Kilometry", kmBegin: "KM pocz\u0105tek", kmEind: "KM koniec", kmTotaal: "KM razem",
+        tolkosten: "Op\u0142aty drogowe (\u20ac)", kostenOverig: "Inne koszty (\u20ac)",
+        laadLosstops: "Przystanki za\u0142adunku / roz\u0142adunku", stop: "Przystanek", verwijderen: "Usu\u0144",
+        twNr: "Nr TW", laadLosLocatie: "Miejsce za\u0142adunku/roz\u0142adunku", aankomst: "Przyjazd",
+        startLadenLossen: "Pocz\u0105tek za\u0142adunku/roz\u0142adunku", vertrek: "Wyjazd", kmstand: "Stan licznika",
+        opmerkingen: "Uwagi", stopToevoegen: "+ Dodaj przystanek",
+        bijzonderheden: "Uwagi og\u00f3lne", p_bijzonderheden: "Wszelkie uwagi...",
+        verzenden: "Wy\u015blij kart\u0119 dzienn\u0105", bezigVerzenden: "Wysy\u0142anie...",
+        downloadPdf: "\uD83D\uDCC4 Pobierz PDF (NL)",
+        successTitle: "Karta dzienna wys\u0142ana", successMsg: "Twoje dane zosta\u0142y zapisane.",
+        nieuweDagstaat: "Wype\u0142nij now\u0105 kart\u0119 dzienn\u0105",
+        pdfNote: "PDF jest zawsze pobierany po niderlandzku.",
+        err_chauffeur: "Prosz\u0119 poda\u0107 imi\u0119 i nazwisko kierowcy.", err_datum: "Prosz\u0119 poda\u0107 dat\u0119.",
+        err_koppeling: "Aplikacja nie jest jeszcze po\u0142\u0105czona (brak SCRIPT_URL).",
+        err_algemeen: "Co\u015b posz\u0142o nie tak.",
+        err_verzenden: "Wysy\u0142anie nie powiod\u0142o si\u0119. Sprawd\u017a internet i spr\u00f3buj ponownie."
+      },
+      pt: {
+        brand: "Folha di\u00e1ria", gegevens: "Dados", charterSubco: "Charter / subcontratado", datum: "Data",
+        kenteken: "Matr\u00edcula", naamChauffeur: "Nome do motorista", p_naam: "Introduza o seu nome",
+        personeelsnummer: "N\u00famero de funcion\u00e1rio", tabletBoco: "Tablet / boco", ja: "Sim", nee: "N\u00e3o",
+        trailernr: "N.\u00ba do reboque", simonLoosTrailerNr: "N.\u00ba reboque Simon Loos",
+        diensttijd: "Tempo de servi\u00e7o", begintijd: "Hora de in\u00edcio", eindtijd: "Hora de fim", pauze: "Pausa",
+        uren: "Horas", minuten: "Minutos", brutoUren: "Horas brutas", nettoUren: "Horas l\u00edquidas",
+        kilometers: "Quil\u00f3metros", kmBegin: "KM in\u00edcio", kmEind: "KM fim", kmTotaal: "KM total",
+        tolkosten: "Portagens (\u20ac)", kostenOverig: "Outros custos (\u20ac)",
+        laadLosstops: "Paragens de carga / descarga", stop: "Paragem", verwijderen: "Remover",
+        twNr: "N.\u00ba TW", laadLosLocatie: "Local de carga/descarga", aankomst: "Chegada",
+        startLadenLossen: "In\u00edcio carga/descarga", vertrek: "Partida", kmstand: "Conta-quil\u00f3metros",
+        opmerkingen: "Observa\u00e7\u00f5es", stopToevoegen: "+ Adicionar paragem",
+        bijzonderheden: "Observa\u00e7\u00f5es gerais", p_bijzonderheden: "Quaisquer observa\u00e7\u00f5es...",
+        verzenden: "Enviar folha di\u00e1ria", bezigVerzenden: "A enviar...",
+        downloadPdf: "\uD83D\uDCC4 Descarregar PDF (NL)",
+        successTitle: "Folha di\u00e1ria enviada", successMsg: "Os seus dados foram guardados.",
+        nieuweDagstaat: "Preencher nova folha di\u00e1ria",
+        pdfNote: "O PDF \u00e9 sempre descarregado em neerland\u00eas.",
+        err_chauffeur: "Por favor, introduza o nome do motorista.", err_datum: "Por favor, introduza a data.",
+        err_koppeling: "A aplica\u00e7\u00e3o ainda n\u00e3o est\u00e1 ligada (SCRIPT_URL em falta).",
+        err_algemeen: "Algo correu mal.",
+        err_verzenden: "Falha no envio. Verifique a sua internet e tente novamente."
+      },
+      ro: {
+        brand: "Fi\u0219\u0103 zilnic\u0103", gegevens: "Date", charterSubco: "Charter / subcontractant", datum: "Data",
+        kenteken: "Num\u0103r \u00eenmatriculare", naamChauffeur: "Nume \u0219ofer", p_naam: "Introduce\u021bi numele",
+        personeelsnummer: "Num\u0103r de angajat", tabletBoco: "Tablet\u0103 / boco", ja: "Da", nee: "Nu",
+        trailernr: "Nr. remorc\u0103", simonLoosTrailerNr: "Nr. remorc\u0103 Simon Loos",
+        diensttijd: "Timp de lucru", begintijd: "Ora de \u00eenceput", eindtijd: "Ora de sf\u00e2r\u0219it", pauze: "Pauz\u0103",
+        uren: "Ore", minuten: "Minute", brutoUren: "Ore brute", nettoUren: "Ore nete",
+        kilometers: "Kilometri", kmBegin: "KM \u00eenceput", kmEind: "KM sf\u00e2r\u0219it", kmTotaal: "KM total",
+        tolkosten: "Taxe de drum (\u20ac)", kostenOverig: "Alte costuri (\u20ac)",
+        laadLosstops: "Opriri \u00eenc\u0103rcare / desc\u0103rcare", stop: "Oprire", verwijderen: "\u0218terge\u021bi",
+        twNr: "Nr. TW", laadLosLocatie: "Loca\u021bie \u00eenc\u0103rcare/desc\u0103rcare", aankomst: "Sosire",
+        startLadenLossen: "\u00cenceput \u00eenc\u0103rcare/desc\u0103rcare", vertrek: "Plecare", kmstand: "Kilometraj",
+        opmerkingen: "Observa\u021bii", stopToevoegen: "+ Ad\u0103uga\u021bi oprire",
+        bijzonderheden: "Men\u021biuni speciale", p_bijzonderheden: "Orice observa\u021bii...",
+        verzenden: "Trimite fi\u0219a zilnic\u0103", bezigVerzenden: "Se trimite...",
+        downloadPdf: "\uD83D\uDCC4 Descarc\u0103 PDF (NL)",
+        successTitle: "Fi\u0219\u0103 zilnic\u0103 trimis\u0103", successMsg: "Datele dvs. au fost salvate.",
+        nieuweDagstaat: "Completa\u021bi o fi\u0219\u0103 zilnic\u0103 nou\u0103",
+        pdfNote: "PDF-ul este \u00eentotdeauna desc\u0103rcat \u00een neerlandez\u0103.",
+        err_chauffeur: "V\u0103 rug\u0103m s\u0103 introduce\u021bi numele \u0219oferului.", err_datum: "V\u0103 rug\u0103m s\u0103 introduce\u021bi data.",
+        err_koppeling: "Aplica\u021bia nu este \u00eenc\u0103 conectat\u0103 (lipse\u0219te SCRIPT_URL).",
+        err_algemeen: "Ceva nu a mers bine.",
+        err_verzenden: "Trimiterea a e\u0219uat. Verifica\u021bi internetul \u0219i \u00eencerca\u021bi din nou."
+      },
+      ru: {
+        brand: "\u0414\u043d\u0435\u0432\u043d\u043e\u0439 \u043b\u0438\u0441\u0442", gegevens: "\u0414\u0430\u043d\u043d\u044b\u0435", charterSubco: "\u0427\u0430\u0440\u0442\u0435\u0440 / \u0441\u0443\u0431\u043f\u043e\u0434\u0440\u044f\u0434\u0447\u0438\u043a", datum: "\u0414\u0430\u0442\u0430",
+        kenteken: "\u0413\u043e\u0441. \u043d\u043e\u043c\u0435\u0440", naamChauffeur: "\u0418\u043c\u044f \u0432\u043e\u0434\u0438\u0442\u0435\u043b\u044f", p_naam: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0432\u0430\u0448\u0435 \u0438\u043c\u044f",
+        personeelsnummer: "\u0422\u0430\u0431\u0435\u043b\u044c\u043d\u044b\u0439 \u043d\u043e\u043c\u0435\u0440", tabletBoco: "\u041f\u043b\u0430\u043d\u0448\u0435\u0442 / boco", ja: "\u0414\u0430", nee: "\u041d\u0435\u0442",
+        trailernr: "\u041d\u043e\u043c\u0435\u0440 \u043f\u0440\u0438\u0446\u0435\u043f\u0430", simonLoosTrailerNr: "\u041d\u043e\u043c\u0435\u0440 \u043f\u0440\u0438\u0446\u0435\u043f\u0430 Simon Loos",
+        diensttijd: "\u0420\u0430\u0431\u043e\u0447\u0435\u0435 \u0432\u0440\u0435\u043c\u044f", begintijd: "\u0412\u0440\u0435\u043c\u044f \u043d\u0430\u0447\u0430\u043b\u0430", eindtijd: "\u0412\u0440\u0435\u043c\u044f \u043e\u043a\u043e\u043d\u0447\u0430\u043d\u0438\u044f", pauze: "\u041f\u0435\u0440\u0435\u0440\u044b\u0432",
+        uren: "\u0427\u0430\u0441\u044b", minuten: "\u041c\u0438\u043d\u0443\u0442\u044b", brutoUren: "\u0427\u0430\u0441\u044b \u0431\u0440\u0443\u0442\u0442\u043e", nettoUren: "\u0427\u0430\u0441\u044b \u043d\u0435\u0442\u0442\u043e",
+        kilometers: "\u041a\u0438\u043b\u043e\u043c\u0435\u0442\u0440\u044b", kmBegin: "\u041a\u041c \u043d\u0430\u0447\u0430\u043b\u043e", kmEind: "\u041a\u041c \u043a\u043e\u043d\u0435\u0446", kmTotaal: "\u041a\u041c \u0432\u0441\u0435\u0433\u043e",
+        tolkosten: "\u0414\u043e\u0440\u043e\u0436\u043d\u044b\u0435 \u0441\u0431\u043e\u0440\u044b (\u20ac)", kostenOverig: "\u041f\u0440\u043e\u0447\u0438\u0435 \u0440\u0430\u0441\u0445\u043e\u0434\u044b (\u20ac)",
+        laadLosstops: "\u041e\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0438 \u043f\u043e\u0433\u0440\u0443\u0437\u043a\u0438 / \u0440\u0430\u0437\u0433\u0440\u0443\u0437\u043a\u0438", stop: "\u041e\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0430", verwijderen: "\u0423\u0434\u0430\u043b\u0438\u0442\u044c",
+        twNr: "\u041d\u043e\u043c\u0435\u0440 TW", laadLosLocatie: "\u041c\u0435\u0441\u0442\u043e \u043f\u043e\u0433\u0440\u0443\u0437\u043a\u0438/\u0440\u0430\u0437\u0433\u0440\u0443\u0437\u043a\u0438", aankomst: "\u041f\u0440\u0438\u0431\u044b\u0442\u0438\u0435",
+        startLadenLossen: "\u041d\u0430\u0447\u0430\u043b\u043e \u043f\u043e\u0433\u0440\u0443\u0437\u043a\u0438/\u0440\u0430\u0437\u0433\u0440\u0443\u0437\u043a\u0438", vertrek: "\u041e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435", kmstand: "\u041f\u0440\u043e\u0431\u0435\u0433",
+        opmerkingen: "\u041f\u0440\u0438\u043c\u0435\u0447\u0430\u043d\u0438\u044f", stopToevoegen: "+ \u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0443",
+        bijzonderheden: "\u041e\u0441\u043e\u0431\u044b\u0435 \u043e\u0442\u043c\u0435\u0442\u043a\u0438", p_bijzonderheden: "\u041b\u044e\u0431\u044b\u0435 \u043f\u0440\u0438\u043c\u0435\u0447\u0430\u043d\u0438\u044f...",
+        verzenden: "\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0434\u043d\u0435\u0432\u043d\u043e\u0439 \u043b\u0438\u0441\u0442", bezigVerzenden: "\u041e\u0442\u043f\u0440\u0430\u0432\u043a\u0430...",
+        downloadPdf: "\uD83D\uDCC4 \u0421\u043a\u0430\u0447\u0430\u0442\u044c PDF (NL)",
+        successTitle: "\u0414\u043d\u0435\u0432\u043d\u043e\u0439 \u043b\u0438\u0441\u0442 \u043e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d", successMsg: "\u0412\u0430\u0448\u0438 \u0434\u0430\u043d\u043d\u044b\u0435 \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u044b.",
+        nieuweDagstaat: "\u0417\u0430\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u043d\u043e\u0432\u044b\u0439 \u0434\u043d\u0435\u0432\u043d\u043e\u0439 \u043b\u0438\u0441\u0442",
+        pdfNote: "PDF \u0432\u0441\u0435\u0433\u0434\u0430 \u0441\u043a\u0430\u0447\u0438\u0432\u0430\u0435\u0442\u0441\u044f \u043d\u0430 \u043d\u0438\u0434\u0435\u0440\u043b\u0430\u043d\u0434\u0441\u043a\u043e\u043c \u044f\u0437\u044b\u043a\u0435.",
+        err_chauffeur: "\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u0438\u043c\u044f \u0432\u043e\u0434\u0438\u0442\u0435\u043b\u044f.", err_datum: "\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u0434\u0430\u0442\u0443.",
+        err_koppeling: "\u041f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0435\u0449\u0451 \u043d\u0435 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u043e (\u043e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442 SCRIPT_URL).",
+        err_algemeen: "\u0427\u0442\u043e-\u0442\u043e \u043f\u043e\u0448\u043b\u043e \u043d\u0435 \u0442\u0430\u043a.",
+        err_verzenden: "\u041e\u0448\u0438\u0431\u043a\u0430 \u043e\u0442\u043f\u0440\u0430\u0432\u043a\u0438. \u041f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u0438\u043d\u0442\u0435\u0440\u043d\u0435\u0442 \u0438 \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0441\u043d\u043e\u0432\u0430."
+      },
+      bg: {
+        brand: "\u0414\u043d\u0435\u0432\u0435\u043d \u043b\u0438\u0441\u0442", gegevens: "\u0414\u0430\u043d\u043d\u0438", charterSubco: "\u0427\u0430\u0440\u0442\u044a\u0440 / \u043f\u043e\u0434\u0438\u0437\u043f\u044a\u043b\u043d\u0438\u0442\u0435\u043b", datum: "\u0414\u0430\u0442\u0430",
+        kenteken: "\u0420\u0435\u0433. \u043d\u043e\u043c\u0435\u0440", naamChauffeur: "\u0418\u043c\u0435 \u043d\u0430 \u0448\u043e\u0444\u044c\u043e\u0440\u0430", p_naam: "\u0412\u044a\u0432\u0435\u0434\u0435\u0442\u0435 \u0432\u0430\u0448\u0435\u0442\u043e \u0438\u043c\u0435",
+        personeelsnummer: "\u0421\u043b\u0443\u0436\u0435\u0431\u0435\u043d \u043d\u043e\u043c\u0435\u0440", tabletBoco: "\u0422\u0430\u0431\u043b\u0435\u0442 / boco", ja: "\u0414\u0430", nee: "\u041d\u0435",
+        trailernr: "\u041d\u043e\u043c\u0435\u0440 \u043d\u0430 \u0440\u0435\u043c\u0430\u0440\u043a\u0435", simonLoosTrailerNr: "\u041d\u043e\u043c\u0435\u0440 \u0440\u0435\u043c\u0430\u0440\u043a\u0435 Simon Loos",
+        diensttijd: "\u0420\u0430\u0431\u043e\u0442\u043d\u043e \u0432\u0440\u0435\u043c\u0435", begintijd: "\u041d\u0430\u0447\u0430\u043b\u0435\u043d \u0447\u0430\u0441", eindtijd: "\u041a\u0440\u0430\u0435\u043d \u0447\u0430\u0441", pauze: "\u041f\u043e\u0447\u0438\u0432\u043a\u0430",
+        uren: "\u0427\u0430\u0441\u043e\u0432\u0435", minuten: "\u041c\u0438\u043d\u0443\u0442\u0438", brutoUren: "\u0411\u0440\u0443\u0442\u043e \u0447\u0430\u0441\u043e\u0432\u0435", nettoUren: "\u041d\u0435\u0442\u043e \u0447\u0430\u0441\u043e\u0432\u0435",
+        kilometers: "\u041a\u0438\u043b\u043e\u043c\u0435\u0442\u0440\u0438", kmBegin: "\u041a\u041c \u043d\u0430\u0447\u0430\u043b\u043e", kmEind: "\u041a\u041c \u043a\u0440\u0430\u0439", kmTotaal: "\u041a\u041c \u043e\u0431\u0449\u043e",
+        tolkosten: "\u041f\u044a\u0442\u043d\u0438 \u0442\u0430\u043a\u0441\u0438 (\u20ac)", kostenOverig: "\u0414\u0440\u0443\u0433\u0438 \u0440\u0430\u0437\u0445\u043e\u0434\u0438 (\u20ac)",
+        laadLosstops: "\u0421\u043f\u0438\u0440\u043a\u0438 \u0437\u0430 \u0442\u043e\u0432\u0430\u0440\u0435\u043d\u0435 / \u0440\u0430\u0437\u0442\u043e\u0432\u0430\u0440\u0432\u0430\u043d\u0435", stop: "\u0421\u043f\u0438\u0440\u043a\u0430", verwijderen: "\u041f\u0440\u0435\u043c\u0430\u0445\u043d\u0438",
+        twNr: "TW \u043d\u043e\u043c\u0435\u0440", laadLosLocatie: "\u041c\u044f\u0441\u0442\u043e \u0437\u0430 \u0442\u043e\u0432\u0430\u0440\u0435\u043d\u0435/\u0440\u0430\u0437\u0442\u043e\u0432\u0430\u0440\u0432\u0430\u043d\u0435", aankomst: "\u041f\u0440\u0438\u0441\u0442\u0438\u0433\u0430\u043d\u0435",
+        startLadenLossen: "\u041d\u0430\u0447\u0430\u043b\u043e \u0442\u043e\u0432\u0430\u0440\u0435\u043d\u0435/\u0440\u0430\u0437\u0442\u043e\u0432\u0430\u0440\u0432\u0430\u043d\u0435", vertrek: "\u0417\u0430\u043c\u0438\u043d\u0430\u0432\u0430\u043d\u0435", kmstand: "\u041f\u0440\u043e\u0431\u0435\u0433",
+        opmerkingen: "\u0417\u0430\u0431\u0435\u043b\u0435\u0436\u043a\u0438", stopToevoegen: "+ \u0414\u043e\u0431\u0430\u0432\u0438 \u0441\u043f\u0438\u0440\u043a\u0430",
+        bijzonderheden: "\u041e\u0441\u043e\u0431\u0435\u043d\u0438 \u0431\u0435\u043b\u0435\u0436\u043a\u0438", p_bijzonderheden: "\u0412\u0441\u044f\u043a\u0430\u043a\u0432\u0438 \u0437\u0430\u0431\u0435\u043b\u0435\u0436\u043a\u0438...",
+        verzenden: "\u0418\u0437\u043f\u0440\u0430\u0442\u0438 \u0434\u043d\u0435\u0432\u0435\u043d \u043b\u0438\u0441\u0442", bezigVerzenden: "\u0418\u0437\u043f\u0440\u0430\u0449\u0430\u043d\u0435...",
+        downloadPdf: "\uD83D\uDCC4 \u0418\u0437\u0442\u0435\u0433\u043b\u0438 PDF (NL)",
+        successTitle: "\u0414\u043d\u0435\u0432\u043d\u0438\u044f\u0442 \u043b\u0438\u0441\u0442 \u0435 \u0438\u0437\u043f\u0440\u0430\u0442\u0435\u043d", successMsg: "\u0412\u0430\u0448\u0438\u0442\u0435 \u0434\u0430\u043d\u043d\u0438 \u0441\u0430 \u0437\u0430\u043f\u0430\u0437\u0435\u043d\u0438.",
+        nieuweDagstaat: "\u041f\u043e\u043f\u044a\u043b\u043d\u0438 \u043d\u043e\u0432 \u0434\u043d\u0435\u0432\u0435\u043d \u043b\u0438\u0441\u0442",
+        pdfNote: "PDF \u0432\u0438\u043d\u0430\u0433\u0438 \u0441\u0435 \u0438\u0437\u0442\u0435\u0433\u043b\u044f \u043d\u0430 \u043d\u0438\u0434\u0435\u0440\u043b\u0430\u043d\u0434\u0441\u043a\u0438.",
+        err_chauffeur: "\u041c\u043e\u043b\u044f, \u0432\u044a\u0432\u0435\u0434\u0435\u0442\u0435 \u0438\u043c\u0435\u0442\u043e \u043d\u0430 \u0448\u043e\u0444\u044c\u043e\u0440\u0430.", err_datum: "\u041c\u043e\u043b\u044f, \u0432\u044a\u0432\u0435\u0434\u0435\u0442\u0435 \u0434\u0430\u0442\u0430\u0442\u0430.",
+        err_koppeling: "\u041f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435\u0442\u043e \u043e\u0449\u0435 \u043d\u0435 \u0435 \u0441\u0432\u044a\u0440\u0437\u0430\u043d\u043e (\u043b\u0438\u043f\u0441\u0432\u0430 SCRIPT_URL).",
+        err_algemeen: "\u041d\u0435\u0449\u043e \u0441\u0435 \u043e\u0431\u044a\u0440\u043a\u0430.",
+        err_verzenden: "\u0418\u0437\u043f\u0440\u0430\u0449\u0430\u043d\u0435\u0442\u043e \u0435 \u043d\u0435\u0443\u0441\u043f\u0435\u0448\u043d\u043e. \u041f\u0440\u043e\u0432\u0435\u0440\u0435\u0442\u0435 \u0438\u043d\u0442\u0435\u0440\u043d\u0435\u0442 \u0438 \u043e\u043f\u0438\u0442\u0430\u0439\u0442\u0435 \u043e\u0442\u043d\u043e\u0432\u043e."
+      },
+      fr: {
+        brand: "Feuille journali\u00e8re", gegevens: "Donn\u00e9es", charterSubco: "Charter / sous-traitant", datum: "Date",
+        kenteken: "Immatriculation", naamChauffeur: "Nom du chauffeur", p_naam: "Entrez votre nom",
+        personeelsnummer: "Num\u00e9ro d'employ\u00e9", tabletBoco: "Tablette / boco", ja: "Oui", nee: "Non",
+        trailernr: "N\u00b0 remorque", simonLoosTrailerNr: "N\u00b0 remorque Simon Loos",
+        diensttijd: "Temps de service", begintijd: "Heure de d\u00e9but", eindtijd: "Heure de fin", pauze: "Pause",
+        uren: "Heures", minuten: "Minutes", brutoUren: "Heures brutes", nettoUren: "Heures nettes",
+        kilometers: "Kilom\u00e8tres", kmBegin: "KM d\u00e9but", kmEind: "KM fin", kmTotaal: "KM total",
+        tolkosten: "P\u00e9ages (\u20ac)", kostenOverig: "Autres frais (\u20ac)",
+        laadLosstops: "Arr\u00eats chargement / d\u00e9chargement", stop: "Arr\u00eat", verwijderen: "Supprimer",
+        twNr: "N\u00b0 TW", laadLosLocatie: "Lieu de chargement/d\u00e9chargement", aankomst: "Arriv\u00e9e",
+        startLadenLossen: "D\u00e9but chargement/d\u00e9chargement", vertrek: "D\u00e9part", kmstand: "Kilom\u00e9trage",
+        opmerkingen: "Remarques", stopToevoegen: "+ Ajouter un arr\u00eat",
+        bijzonderheden: "Particularit\u00e9s", p_bijzonderheden: "Remarques \u00e9ventuelles...",
+        verzenden: "Envoyer la feuille", bezigVerzenden: "Envoi en cours...",
+        downloadPdf: "\uD83D\uDCC4 T\u00e9l\u00e9charger le PDF (NL)",
+        successTitle: "Feuille journali\u00e8re envoy\u00e9e", successMsg: "Vos donn\u00e9es ont \u00e9t\u00e9 enregistr\u00e9es.",
+        nieuweDagstaat: "Remplir une nouvelle feuille",
+        pdfNote: "Le PDF est toujours t\u00e9l\u00e9charg\u00e9 en n\u00e9erlandais.",
+        err_chauffeur: "Veuillez entrer le nom du chauffeur.", err_datum: "Veuillez entrer la date.",
+        err_koppeling: "L'application n'est pas encore li\u00e9e (SCRIPT_URL manquant).",
+        err_algemeen: "Une erreur s'est produite.",
+        err_verzenden: "\u00c9chec de l'envoi. V\u00e9rifiez votre connexion et r\u00e9essayez."
+      },
+      de: {
+        brand: "Tagesbericht", gegevens: "Daten", charterSubco: "Charter / Subunternehmer", datum: "Datum",
+        kenteken: "Kennzeichen", naamChauffeur: "Name des Fahrers", p_naam: "Namen eingeben",
+        personeelsnummer: "Personalnummer", tabletBoco: "Tablet / boco", ja: "Ja", nee: "Nein",
+        trailernr: "Trailer-Nr.", simonLoosTrailerNr: "Simon Loos Trailer-Nr.",
+        diensttijd: "Dienstzeit", begintijd: "Startzeit", eindtijd: "Endzeit", pauze: "Pause",
+        uren: "Stunden", minuten: "Minuten", brutoUren: "Bruttostunden", nettoUren: "Nettostunden",
+        kilometers: "Kilometer", kmBegin: "KM Start", kmEind: "KM Ende", kmTotaal: "KM gesamt",
+        tolkosten: "Mautkosten (\u20ac)", kostenOverig: "Sonstige Kosten (\u20ac)",
+        laadLosstops: "Lade- / Entladestopps", stop: "Stopp", verwijderen: "Entfernen",
+        twNr: "TW-Nr.", laadLosLocatie: "Lade-/Entladeort", aankomst: "Ankunft",
+        startLadenLossen: "Start Laden/Entladen", vertrek: "Abfahrt", kmstand: "Kilometerstand",
+        opmerkingen: "Anmerkungen", stopToevoegen: "+ Stopp hinzuf\u00fcgen",
+        bijzonderheden: "Besonderheiten", p_bijzonderheden: "Eventuelle Anmerkungen...",
+        verzenden: "Tagesbericht senden", bezigVerzenden: "Wird gesendet...",
+        downloadPdf: "\uD83D\uDCC4 PDF herunterladen (NL)",
+        successTitle: "Tagesbericht gesendet", successMsg: "Ihre Daten wurden gespeichert.",
+        nieuweDagstaat: "Neuen Tagesbericht ausf\u00fcllen",
+        pdfNote: "Die PDF wird immer auf Niederl\u00e4ndisch heruntergeladen.",
+        err_chauffeur: "Bitte geben Sie den Namen des Fahrers ein.", err_datum: "Bitte geben Sie das Datum ein.",
+        err_koppeling: "Die App ist noch nicht verbunden (SCRIPT_URL fehlt).",
+        err_algemeen: "Etwas ist schiefgelaufen.",
+        err_verzenden: "Senden fehlgeschlagen. Pr\u00fcfen Sie Ihr Internet und versuchen Sie es erneut."
+      }
+    };
+
+    // Translation helper — falls back to Dutch if a key is ever missing.
+    function t(key) {
+      var pack = I18N[currentLang] || I18N.nl;
+      return (pack[key] != null) ? pack[key] : (I18N.nl[key] != null ? I18N.nl[key] : key);
+    }
+
+    function setLanguage(lang) {
+      if (!I18N[lang]) return;
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      render();
+    }
 
     function todayISO() {
       var d = new Date();
@@ -156,10 +412,10 @@
 
     function submit() {
       state.error = "";
-      if (!state.header.chauffeur) { state.error = "Vul de naam van de chauffeur in."; render(); return; }
-      if (!state.header.datum) { state.error = "Vul de datum in."; render(); return; }
+      if (!state.header.chauffeur) { state.error = t("err_chauffeur"); render(); return; }
+      if (!state.header.datum) { state.error = t("err_datum"); render(); return; }
       if (SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
-        state.error = "De app is nog niet gekoppeld (SCRIPT_URL ontbreekt).";
+        state.error = t("err_koppeling");
         render(); return;
       }
 
@@ -183,13 +439,13 @@
           };
           state.success = true;
         } else {
-          state.error = (data && data.error) || "Er ging iets mis.";
+          state.error = (data && data.error) || t("err_algemeen");
         }
         render();
       })
       .catch(function (err) {
         state.submitting = false;
-        state.error = "Verzenden mislukt. Controleer je internet en probeer opnieuw.";
+        state.error = t("err_verzenden");
         render();
       });
     }
@@ -213,6 +469,17 @@
       return node;
     }
 
+    // Language selector pills — shown at the top on every screen.
+    function renderLangBar(app) {
+      var bar = el("div", { class: "lang-bar" }, LANG_ORDER.map(function (code) {
+        return el("div", {
+          class: "lang-btn" + (currentLang === code ? " active" : ""),
+          onclick: function () { setLanguage(code); }
+        }, [ LANG_NAMES[code] ]);
+      }));
+      app.appendChild(bar);
+    }
+
     function inputField(label, key, type) {
       return el("div", { class: "field" }, [
         el("label", null, [label]),
@@ -228,19 +495,22 @@
       var app = document.getElementById("app");
       app.innerHTML = "";
 
+      // Language selector is always available (before, during, and after entry).
+      renderLangBar(app);
+
       if (state.success) {
         app.appendChild(el("div", { class: "success-screen" }, [
           el("div", { class: "checkmark" }, ["\u2713"]),
-          el("h2", null, ["Dagstaat verzonden"]),
-          el("p", null, ["Je gegevens zijn opgeslagen."]),
-          el("button", { class: "btn-submit", onclick: function () { downloadPdf(state.lastSubmitted); } }, ["\uD83D\uDCC4 Download PDF"]),
-          el("button", { class: "btn-secondary", onclick: resetForm }, ["Nieuwe dagstaat invullen"])
+          el("h2", null, [t("successTitle")]),
+          el("p", null, [t("successMsg")]),
+          el("button", { class: "btn-submit", onclick: function () { downloadPdf(state.lastSubmitted); } }, [t("downloadPdf")]),
+          el("button", { class: "btn-secondary", onclick: resetForm }, [t("nieuweDagstaat")])
         ]));
         return;
       }
 
       app.appendChild(el("div", { class: "brand" }, [
-        el("h1", null, ["Dagstaat"]),
+        el("h1", null, [t("brand")]),
         el("span", null, ["Simon Loos"])
       ]));
 
@@ -250,48 +520,48 @@
 
       // --- Gegevens card ---
       var driverField = el("div", { class: "field" }, [
-        el("label", null, ["Naam chauffeur"]),
+        el("label", null, [t("naamChauffeur")]),
         el("input", {
           type: "text",
           value: state.header.chauffeur,
-          placeholder: "Vul je naam in",
+          placeholder: t("p_naam"),
           oninput: function (e) { state.header.chauffeur = e.target.value; }
         })
       ]);
 
       app.appendChild(el("div", { class: "card" }, [
-        el("h2", null, ["Gegevens"]),
-        inputField("Charter / subco", "charterSubco"),
-        el("div", { class: "row2" }, [ inputField("Datum", "datum", "date"), inputField("Kenteken", "kenteken") ]),
+        el("h2", null, [t("gegevens")]),
+        inputField(t("charterSubco"), "charterSubco"),
+        el("div", { class: "row2" }, [ inputField(t("datum"), "datum", "date"), inputField(t("kenteken"), "kenteken") ]),
         driverField,
         el("div", { class: "row2" }, [
-          inputField("Personeelsnummer", "personeelsnummer"),
+          inputField(t("personeelsnummer"), "personeelsnummer"),
           el("div", { class: "field" }, [
-            el("label", null, ["Tablet / boco"]),
+            el("label", null, [t("tabletBoco")]),
             el("div", { class: "radio-group" }, [
-              radio("tabletBoco", "Ja"), radio("tabletBoco", "Nee")
+              radio("tabletBoco", "Ja", t("ja")), radio("tabletBoco", "Nee", t("nee"))
             ])
           ])
         ]),
         el("div", { class: "row2" }, [
-          inputField("Trailernr", "trailernr"),
-          inputField("Simon Loos trailer nr", "simonLoosTrailerNr")
+          inputField(t("trailernr"), "trailernr"),
+          inputField(t("simonLoosTrailerNr"), "simonLoosTrailerNr")
         ])
       ]));
 
       // --- Diensttijd card ---
       var uren = computeUren(state.header.begintijd, state.header.eindtijd, state.header.pauze);
       var diensttijdChildren = [
-        el("h2", null, ["Diensttijd"]),
+        el("h2", null, [t("diensttijd")]),
         el("div", { class: "row2 row-datetime" }, [
-          inputField("Begintijd", "begintijd", "datetime-local"),
-          inputField("Eindtijd", "eindtijd", "datetime-local")
+          inputField(t("begintijd"), "begintijd", "datetime-local"),
+          inputField(t("eindtijd"), "eindtijd", "datetime-local")
         ]),
         pauzeField()
       ];
       if (uren.bruto !== "" || uren.netto !== "") {
         diensttijdChildren.push(el("div", { class: "computed", id: "urenBox" }, [
-          "Bruto uren: " + (uren.bruto || "-") + "  |  Netto uren: " + (uren.netto || "-")
+          t("brutoUren") + ": " + (uren.bruto || "-") + "  |  " + t("nettoUren") + ": " + (uren.netto || "-")
         ]));
       }
       app.appendChild(el("div", { class: "card" }, diensttijdChildren));
@@ -299,56 +569,56 @@
       // --- Kilometers card ---
       var kmTot = computeKm(state.header.kmBegin, state.header.kmEind);
       var kmChildren = [
-        el("h2", null, ["Kilometers"]),
+        el("h2", null, [t("kilometers")]),
         el("div", { class: "row2" }, [
-          inputField("KM begin", "kmBegin", "number"),
-          inputField("KM eind", "kmEind", "number")
+          inputField(t("kmBegin"), "kmBegin", "number"),
+          inputField(t("kmEind"), "kmEind", "number")
         ])
       ];
       if (kmTot !== "") {
-        kmChildren.push(el("div", { class: "computed", id: "kmBox" }, ["KM totaal: " + kmTot]));
+        kmChildren.push(el("div", { class: "computed", id: "kmBox" }, [t("kmTotaal") + ": " + kmTot]));
       }
       kmChildren.push(el("div", { class: "row2" }, [
-        inputField("Tolkosten (\u20ac)", "tolkosten", "number"),
-        inputField("Kosten overig (\u20ac)", "kostenOverig", "number")
+        inputField(t("tolkosten"), "tolkosten", "number"),
+        inputField(t("kostenOverig"), "kostenOverig", "number")
       ]));
       app.appendChild(el("div", { class: "card" }, kmChildren));
 
       // --- Stops card ---
-      var stopCards = [ el("h2", null, ["Laad- / losstops"]) ];
+      var stopCards = [ el("h2", null, [t("laadLosstops")]) ];
       state.stops.forEach(function (stop, i) {
         var headerRow = el("div", { class: "stop-card-header" }, [
-          el("strong", null, ["Stop " + (i + 1)]),
+          el("strong", null, [t("stop") + " " + (i + 1)]),
           state.stops.length > 1
-            ? el("button", { type: "button", class: "btn-remove", onclick: function () { removeStop(i); } }, ["Verwijderen"])
+            ? el("button", { type: "button", class: "btn-remove", onclick: function () { removeStop(i); } }, [t("verwijderen")])
             : null
         ]);
         stopCards.push(el("div", { class: "stop-card" }, [
           headerRow,
-          stopField(i, "TW. nr", "twNr"),
-          stopField(i, "Laad-/loslocatie", "laadLosLocatie"),
+          stopField(i, t("twNr"), "twNr"),
+          stopField(i, t("laadLosLocatie"), "laadLosLocatie"),
           el("div", { class: "row3 row-datetime" }, [
-            stopField(i, "Aankomst", "aankomst", "datetime-local"),
-            stopField(i, "Start laden/lossen", "startLadenLossen", "datetime-local"),
-            stopField(i, "Vertrek", "vertrek", "datetime-local")
+            stopField(i, t("aankomst"), "aankomst", "datetime-local"),
+            stopField(i, t("startLadenLossen"), "startLadenLossen", "datetime-local"),
+            stopField(i, t("vertrek"), "vertrek", "datetime-local")
           ]),
           el("div", { class: "row2" }, [
             stopPauzeField(i),
-            stopField(i, "KMstand", "kmStand", "number")
+            stopField(i, t("kmstand"), "kmStand", "number")
           ]),
-          stopField(i, "Opmerkingen", "opmerkingen")
+          stopField(i, t("opmerkingen"), "opmerkingen")
         ]));
       });
-      stopCards.push(el("button", { type: "button", class: "btn-add", onclick: addStop }, ["+ Stop toevoegen"]));
+      stopCards.push(el("button", { type: "button", class: "btn-add", onclick: addStop }, [t("stopToevoegen")]));
       app.appendChild(el("div", { class: "card" }, stopCards));
 
       // --- Bijzonderheden card ---
       app.appendChild(el("div", { class: "card" }, [
-        el("h2", null, ["Bijzonderheden"]),
+        el("h2", null, [t("bijzonderheden")]),
         el("div", { class: "field" }, [
           el("textarea", {
             value: state.header.bijzonderheden,
-            placeholder: "Eventuele opmerkingen...",
+            placeholder: t("p_bijzonderheden"),
             oninput: function (e) { state.header.bijzonderheden = e.target.value; }
           })
         ])
@@ -359,22 +629,27 @@
         class: "btn-submit",
         disabled: state.submitting ? "disabled" : null,
         onclick: submit
-      }, [ state.submitting ? "Bezig met verzenden..." : "Dagstaat verzenden" ]));
+      }, [ state.submitting ? t("bezigVerzenden") : t("verzenden") ]));
 
       app.appendChild(el("button", {
         class: "btn-secondary",
         onclick: function () { downloadPdf(null); }
-      }, [ "\uD83D\uDCC4 Download PDF" ]));
+      }, [ t("downloadPdf") ]));
+
+      // Small reminder that the PDF is always Dutch.
+      app.appendChild(el("div", { class: "pdf-note" }, [ t("pdfNote") ]));
     }
 
-    function radio(key, val) {
+    function radio(key, val, labelText) {
+      // `val` is the stored (Dutch) value used by the PDF logic ("Ja"/"Nee").
+      // `labelText` is what the driver sees, translated.
       return el("label", null, [
         el("input", {
           type: "radio", name: key,
           checked: state.header[key] === val,
           onchange: function () { state.header[key] = val; }
         }),
-        val
+        (labelText != null ? labelText : val)
       ]);
     }
 
@@ -408,18 +683,18 @@
           type: "number", min: "0", max: "23", value: hrs, placeholder: "0",
           oninput: function (e) { hrs = e.target.value; commit(hrs, mins); }
         }),
-        el("span", { class: "sublabel" }, ["Uren"])
+        el("span", { class: "sublabel" }, [t("uren")])
       ]);
       var minBox = el("div", null, [
         el("input", {
           type: "number", min: "0", max: "59", value: mins, placeholder: "0",
           oninput: function (e) { mins = e.target.value; commit(hrs, mins); }
         }),
-        el("span", { class: "sublabel" }, ["Minuten"])
+        el("span", { class: "sublabel" }, [t("minuten")])
       ]);
 
       return el("div", { class: "field" }, [
-        el("label", null, ["Pauze"]),
+        el("label", null, [t("pauze")]),
         el("div", { class: "row2" }, [ hourBox, minBox ])
       ]);
     }
@@ -442,21 +717,27 @@
           type: "number", min: "0", max: "23", value: hrs, placeholder: "0",
           oninput: function (e) { hrs = e.target.value; commit(hrs, mins); }
         }),
-        el("span", { class: "sublabel" }, ["Uren"])
+        el("span", { class: "sublabel" }, [t("uren")])
       ]);
       var minBox = el("div", null, [
         el("input", {
           type: "number", min: "0", max: "59", value: mins, placeholder: "0",
           oninput: function (e) { mins = e.target.value; commit(hrs, mins); }
         }),
-        el("span", { class: "sublabel" }, ["Minuten"])
+        el("span", { class: "sublabel" }, [t("minuten")])
       ]);
 
       return el("div", { class: "field" }, [
-        el("label", null, ["Pauze"]),
+        el("label", null, [t("pauze")]),
         el("div", { class: "row2" }, [ hourBox, minBox ])
       ]);
     }
+
+    // =====================================================================
+    // PDF GENERATION — ALWAYS IN DUTCH.
+    // All strings below are hard-coded Dutch on purpose. The driver's chosen
+    // interface language does NOT affect the PDF; the office always receives a
+    // Dutch Simon Loos sheet.
     // Runs entirely in the browser via jsPDF (loaded from the CDN above).
     // =====================================================================
     function downloadPdf(snapshot) {
@@ -745,10 +1026,10 @@
     function updateComputed() {
       var uren = computeUren(state.header.begintijd, state.header.eindtijd, state.header.pauze);
       var urenBox = document.getElementById("urenBox");
-      if (urenBox) urenBox.textContent = "Bruto uren: " + (uren.bruto || "-") + "  |  Netto uren: " + (uren.netto || "-");
+      if (urenBox) urenBox.textContent = t("brutoUren") + ": " + (uren.bruto || "-") + "  |  " + t("nettoUren") + ": " + (uren.netto || "-");
       var kmTot = computeKm(state.header.kmBegin, state.header.kmEind);
       var kmBox = document.getElementById("kmBox");
-      if (kmBox) kmBox.textContent = "KM totaal: " + kmTot;
+      if (kmBox) kmBox.textContent = t("kmTotaal") + ": " + kmTot;
     }
 
     render();
