@@ -347,6 +347,19 @@
       var t = v.indexOf("T") !== -1 ? v.split("T")[1] : v;
       return t || "";
     }
+    // Compact "dd-mm HH:MM" for the PDF Diensttijd cells, so an overnight
+    // shift clearly shows begin and end fall on different days. Falls back to
+    // just the time if no date is present. (The full date is already in the
+    // header "Datum" field, so the year is omitted here to fit the cell.)
+    function dateTimePart(v) {
+      if (!v) return "";
+      if (v.indexOf("T") === -1) return timePart(v);
+      var parts = v.split("T");
+      var d = parts[0].split("-");   // [yyyy, mm, dd]
+      var tm = parts[1] || "";
+      if (d.length === 3) return d[2] + "-" + d[1] + " " + tm;
+      return tm;
+    }
     function computeUren(begin, eind, pauze) {
       var sd = begin && begin.indexOf("T") !== -1 ? new Date(begin) : null;
       var ed = eind && eind.indexOf("T") !== -1 ? new Date(eind) : null;
@@ -872,8 +885,8 @@
       }
 
       labelledBox(colDienst, dienstLabelW, dienstValW, [
-        ["Begintijd", timePart(hdr.begintijd)],
-        ["Eindtijd", timePart(hdr.eindtijd)],
+        ["Begintijd", dateTimePart(hdr.begintijd)],
+        ["Eindtijd", dateTimePart(hdr.eindtijd)],
         ["bruto uren", uren.bruto],
         ["pauze", hdr.pauze],
         ["netto uren", uren.netto]
